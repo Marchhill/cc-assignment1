@@ -16,3 +16,8 @@ chmod +x run.sh
 # run program
 ./run.sh
 ```
+
+## todo
+* run on cluster
+* add to word counting capabilities
+* correctly package project
