@@ -19,5 +19,11 @@ chmod +x run.sh
 
 ## todo
 * run on cluster
-* add to word counting capabilities
+* sanitise input (words) :white_check_mark: 
+* sanitise input (letters - same as words but split into letters)
+* count tokens using MapReduce
+* sort tokens by frequency
+* split list of tokens into categories (rare, popular, or common - discard the remaining tokens)
+* sort each category by alphabetical order
+* write into a csv file
 * correctly package project
