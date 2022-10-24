@@ -1,4 +1,4 @@
-scp -i ~/.ssh/cloud ./target/assignment1-1.0-SNAPSHOT.jar cc-group2@caelum-109.cl.cam.ac.uk:~
+scp -i ~/.ssh/cloud ./target/assignment1-1.0-SNAPSHOT.jar cc-group2@caelum-109.cl.cam.ac.uk:~/yeet-data
 ssh -i ~/.ssh/cloud cc-group2@caelum-109.cl.cam.ac.uk "kubectl cp ~/yeet-data/assignment1-1.0-SNAPSHOT.jar cc-group2/bobuntu:/volume-mount-yeet; ~/spark-3.3.0-bin-hadoop3/bin/spark-submit \
     --master k8s://https://128.232.80.18:6443 \
     --deploy-mode cluster \
@@ -14,4 +14,4 @@ ssh -i ~/.ssh/cloud cc-group2@caelum-109.cl.cam.ac.uk "kubectl cp ~/yeet-data/as
     --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.path=/test-data \
     --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.readOnly=false \
     --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.options.claimName=nfs-cc-group2 \
-    local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/data100MB.txt"
+    local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/data-100MB.txt"
