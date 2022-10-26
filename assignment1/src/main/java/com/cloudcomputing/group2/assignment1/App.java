@@ -25,53 +25,42 @@ public class App {
             .appName("Group2WordCount")
             .getOrCreate();
 
-        // CREATE SPARK CONTEXT
-        //SparkConf conf = new SparkConf().setAppName("wordCount").setMaster("local[3]");
-        //JavaSparkContext sparkContext = new JavaSparkContext(conf);
-
         JavaRDD<String> lines = spark.read().textFile(args[0]).javaRDD();
 
-        JavaRDD<String> words = lines.flatMap( title -> Arrays.asList(title
+        JavaRDD<String> words = lines.flatMap(line -> Arrays.asList(line
             .toLowerCase()
             .trim()
-            .replaceAll("\\p{Punct}","")
-            .split(" ")).iterator());
+            .split("[ ,.;:?!“”()\\[\\]{}_-]"))
+            .iterator());
 
-        JavaPairRDD<String, Integer> ones = words.mapToPair(s -> new Tuple2<>(s, 1));
+        JavaRDD<String> validWords = words.filter(w -> w.matches("[a-z]+"));
 
-        JavaPairRDD<String, Integer> counts = ones.reduceByKey((i1, i2) -> i1 + i2);
+        JavaPairRDD<String, Integer> wordOnes = validWords.mapToPair(s -> new Tuple2<>(s, 1));
 
-        List<Tuple2<String, Integer>> output = counts.collect();
-        for (Tuple2<?,?> tuple : output) {
-        System.out.println(tuple._1() + ": " + tuple._2());
+        JavaPairRDD<String, Integer> wordCounts = wordOnes.reduceByKey((i1, i2) -> i1 + i2);
+
+        List<Tuple2<String, Integer>> wordOutput = wordCounts
+            .mapToPair(x -> x.swap())
+            .sortByKey(false)
+            .mapToPair(x -> x.swap())
+            .collect();
+
+        JavaPairRDD<String, Integer> letterOnes = words.flatMap(w -> Arrays.asList(w.split("(?!^)")).iterator())
+        .filter(w -> w.matches("[a-z]"))
+        .mapToPair(s -> new Tuple2<>(s, 1));
+
+        JavaPairRDD<String, Integer> letterCounts = letterOnes.reduceByKey((i1, i2) -> i1 + i2);
+
+        List<Tuple2<String, Integer>> letterOutput = letterCounts.collect();
+
+        for (Tuple2<?,?> tuple : wordOutput) {
+            System.out.println(tuple._1() + ": " + tuple._2());
         }
+
+        for (Tuple2<?,?> tuple : letterOutput) {
+            System.out.println(tuple._1() + ": " + tuple._2());
+        }
+
         spark.stop();
-
-        /*
-
-        // LOAD DATASETS
-        JavaRDD<String> text = spark.read().textFile("./sample_files/sample-a.txt");
-
-        // TRANSFORMATIONS
-        JavaRDD<String> titles = text
-                //.map(YoutubeTitleWordCount::extractTitle)
-                .filter(StringUtils::isNotBlank);
-
-        JavaRDD<String> words = titles.flatMap( title -> Arrays.asList(title
-                .toLowerCase()
-                .trim()
-                .replaceAll("\\p{Punct}","")
-                .split(" ")).iterator());
-		
-        // COUNTING
-        Map<String, Long> wordCounts = words.countByValue();
-        List<Map.Entry> sorted = wordCounts.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
-      
-        // DISPLAY
-        for (Map.Entry<String, Long> entry : sorted) {
-            System.out.println(entry.getKey() + " : " + entry.getValue());
-        }
-        */
     }
 }
