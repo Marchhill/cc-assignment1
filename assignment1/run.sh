@@ -1,3 +1,4 @@
+mvn clean package
 scp -i ~/.ssh/cloud ./target/assignment1-1.0-SNAPSHOT.jar cc-group2@caelum-109.cl.cam.ac.uk:~/yeet-data
 ssh -i ~/.ssh/cloud cc-group2@caelum-109.cl.cam.ac.uk "kubectl cp ~/yeet-data/assignment1-1.0-SNAPSHOT.jar cc-group2/bobuntu:/volume-mount-yeet; ~/spark-3.3.0-bin-hadoop3/bin/spark-submit \
     --master k8s://https://128.232.80.18:6443 \

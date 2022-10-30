@@ -7,6 +7,9 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +31,7 @@ public class App {
 
         JavaRDD<String> lines = spark.read().textFile(args[0]).javaRDD();
 
+        // Words
         JavaRDD<String> words = lines.flatMap(line -> Arrays.asList(line
                 .toLowerCase()
                 .trim()
@@ -72,31 +76,101 @@ public class App {
                         List.of(Long.toString(x._1()), x._2()._2(), "common", Integer.toString(x._2()._1()))))
                 .collect();
 
-        // List<Tuple2<String, Integer>> sortedWords
-        // .collect();
-
+        // Letters
         JavaPairRDD<String, Integer> letterOnes = words.flatMap(w -> Arrays.asList(w.split("(?!^)")).iterator())
                 .filter(w -> w.matches("[a-z]"))
                 .mapToPair(s -> new Tuple2<>(s, 1));
 
         JavaPairRDD<String, Integer> letterCounts = letterOnes.reduceByKey((i1, i2) -> i1 + i2);
 
-        List<Tuple2<String, Integer>> letterOutput = letterCounts.collect();
+        // <Index, <Freq, Letter>>
+        JavaPairRDD<Long, Tuple2<Integer, String>> sortedLettersWithIndex = letterCounts
+                .sortByKey() // sorts into alphabetical order
+                .mapToPair(x -> x.swap()) // <Freq, Letter>
+                .sortByKey(false) // sorts by rank
+                .zipWithIndex() // <<Freq, Letter>, Index>
+                .mapToPair(x -> x.swap()); // <Index, <Freq, Letter>>
 
-        for (String s : popular) {
-            System.out.println(s);
+        long totalLetters = sortedLettersWithIndex.count();
+
+        long popularUpperBoundL = (long) Math.ceil(totalLetters * 0.05); // this rounds up
+        long rareLowerBoundL = (long) (totalLetters * 0.95);
+        long commonLowerBoundL = (long) (totalLetters * 0.475);
+        long commonUpperBoundL = (long) Math.ceil(totalLetters * 0.525);
+
+        List<String> popularL = sortedLettersWithIndex
+                .filterByRange(0L, popularUpperBoundL)
+                .map(x -> String.join(", ",
+                        List.of(Long.toString(x._1()), x._2()._2(), "popular", Integer.toString(x._2()._1()))))
+                .collect();
+
+        List<String> rareL = sortedLettersWithIndex
+                .filterByRange(rareLowerBoundL, totalLetters)
+                .map(x -> String.join(", ",
+                        List.of(Long.toString(x._1()), x._2()._2(), "rare", Integer.toString(x._2()._1()))))
+                .collect();
+
+        List<String> commonL = sortedLettersWithIndex
+                .filterByRange(commonLowerBoundL, commonUpperBoundL)
+                .map(x -> String.join(", ",
+                        List.of(Long.toString(x._1()), x._2()._2(), "common", Integer.toString(x._2()._1()))))
+                .collect();
+
+        // Output
+        try {
+            BufferedWriter w = new BufferedWriter(new FileWriter("/test-data/words_spark"));
+
+            for (String s : popular) {
+                System.out.println(s);
+                w.write(s);
+                w.newLine();
+            }
+            System.out.println();
+
+            for (String s : common) {
+                System.out.println(s);
+                w.write(s);
+                w.newLine();
+            }
+            System.out.println();
+
+            for (String s : rare) {
+                System.out.println(s);
+                w.write(s);
+                w.newLine();
+            }
+            w.close();
         }
-        System.out.println();
-        for (String s : common) {
-            System.out.println(s);
-        }
-        System.out.println();
-        for (String s : rare) {
-            System.out.println(s);
+        catch (IOException e) {
+            e.printStackTrace();
         }
 
-        for (Tuple2<?, ?> tuple : letterOutput) {
-            System.out.println(tuple._1() + ": " + tuple._2());
+        try {
+            BufferedWriter w = new BufferedWriter(new FileWriter("/test-data/letters_spark"));
+
+            for (String s : popularL) {
+                System.out.println(s);
+                w.write(s);
+                w.newLine();
+            }
+            System.out.println();
+
+            for (String s : commonL) {
+                System.out.println(s);
+                w.write(s);
+                w.newLine();
+            }
+            System.out.println();
+
+            for (String s : rareL) {
+                System.out.println(s);
+                w.write(s);
+                w.newLine();
+            }
+            w.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
 
         spark.stop();
