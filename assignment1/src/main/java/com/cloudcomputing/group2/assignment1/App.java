@@ -1,21 +1,13 @@
 package com.cloudcomputing.group2.assignment1;
 
 import scala.Tuple2;
-import org.apache.commons.lang.StringUtils;
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class App {
     public static void main(String[] args) {
@@ -35,7 +27,7 @@ public class App {
         JavaRDD<String> words = lines.flatMap(line -> Arrays.asList(line
                 .toLowerCase()
                 .trim()
-                .split("[ ,.;:?!“”()\\[\\]{}_-]"))
+                .split("[ ,.;:?!“”()'\\[\\]{}_-]"))
                 .iterator());
 
         JavaRDD<String> validWords = words.filter(w -> w.matches("[a-z]+"));
@@ -61,19 +53,22 @@ public class App {
         List<String> popular = sortedWordsWithIndex
                 .filterByRange(0L, popularUpperBound)
                 .map(x -> String.join(", ",
-                        List.of(Long.toString(x._1()), x._2()._2(), "popular", Integer.toString(x._2()._1()))))
+                        List.of(Long.toString(x._1()), x._2()._2(), "popular",
+                                Integer.toString(x._2()._1()))))
                 .collect();
 
         List<String> rare = sortedWordsWithIndex
                 .filterByRange(rareLowerBound, totalWords)
                 .map(x -> String.join(", ",
-                        List.of(Long.toString(x._1()), x._2()._2(), "rare", Integer.toString(x._2()._1()))))
+                        List.of(Long.toString(x._1()), x._2()._2(), "rare",
+                                Integer.toString(x._2()._1()))))
                 .collect();
 
         List<String> common = sortedWordsWithIndex
                 .filterByRange(commonLowerBound, commonUpperBound)
                 .map(x -> String.join(", ",
-                        List.of(Long.toString(x._1()), x._2()._2(), "common", Integer.toString(x._2()._1()))))
+                        List.of(Long.toString(x._1()), x._2()._2(), "common",
+                                Integer.toString(x._2()._1()))))
                 .collect();
 
         // Letters
@@ -101,19 +96,22 @@ public class App {
         List<String> popularL = sortedLettersWithIndex
                 .filterByRange(0L, popularUpperBoundL)
                 .map(x -> String.join(", ",
-                        List.of(Long.toString(x._1()), x._2()._2(), "popular", Integer.toString(x._2()._1()))))
+                        List.of(Long.toString(x._1()), x._2()._2(), "popular",
+                                Integer.toString(x._2()._1()))))
                 .collect();
 
         List<String> rareL = sortedLettersWithIndex
                 .filterByRange(rareLowerBoundL, totalLetters)
                 .map(x -> String.join(", ",
-                        List.of(Long.toString(x._1()), x._2()._2(), "rare", Integer.toString(x._2()._1()))))
+                        List.of(Long.toString(x._1()), x._2()._2(), "rare",
+                                Integer.toString(x._2()._1()))))
                 .collect();
 
         List<String> commonL = sortedLettersWithIndex
                 .filterByRange(commonLowerBoundL, commonUpperBoundL)
                 .map(x -> String.join(", ",
-                        List.of(Long.toString(x._1()), x._2()._2(), "common", Integer.toString(x._2()._1()))))
+                        List.of(Long.toString(x._1()), x._2()._2(), "common",
+                                Integer.toString(x._2()._1()))))
                 .collect();
 
         // Output
@@ -140,8 +138,7 @@ public class App {
                 w.newLine();
             }
             w.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -168,8 +165,7 @@ public class App {
                 w.newLine();
             }
             w.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
