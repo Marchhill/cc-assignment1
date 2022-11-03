@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+
+import subprocess
 import os
 import time
 import csv
@@ -15,7 +18,7 @@ for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 	res = {'2': [], '4': [], '6': []}
 	for i in range(0, 3):
 		for executors in ['2', '4', '6']:
-			r = os.system('/usr/bin/time --format %e ~/spark-3.3.0-bin-hadoop3/bin/spark-submit \
+			out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 				--master k8s://https://128.232.80.18:6443 \
 				--deploy-mode cluster \
 				--name group2-wordcount \
@@ -30,15 +33,16 @@ for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.path=/test-data \
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.readOnly=false \
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.options.claimName=nfs-cc-group2 \
-				local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/' + file + '.txt > /dev/null')
-			print(file + " with " + executors + " executors took " + r + "s")
-			res[executors].push(r)
+				local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/' + file + '.txt').split(),capture_output=True).stderr
+			seconds = float(out.decode('utf-8').strip())
+			print(file + " with " + executors + " executors took " + str(seconds) + "s")
+			res[executors].append(seconds)
 		
 		# wait 15 mins before starting next iteration
 		time.sleep(15 * 60)
 	
 	# write to output file
-	with open('~/experiments/' + sys.argv[1] + '/measurements/' + file + '.csv', 'w', newline='') as f:
+	with open('./experiments/' + sys.argv[1] + '/measurements/' + file + '.csv', 'w', newline='') as f:
 		writer = csv.writer(f)
 		writer.writerow(['Workers', 'Execution Time 1', 'Execution Time 2', 'Execution Time 3'])
 		writer.writerow(['2'] + res['2'])
