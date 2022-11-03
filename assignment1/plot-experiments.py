@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
@@ -6,6 +8,7 @@ import os
 def main(argv):
     if len(argv) < 1:
         print("ERROR: expecting timestamp")
+        sys.exit(1)
 
     dirpath = "./experiments/"+argv[0]
     if not os.path.isdir(dirpath + '/graphs'):
