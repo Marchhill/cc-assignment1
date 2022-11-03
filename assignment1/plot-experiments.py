@@ -1,12 +1,15 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
+import os
 
 def main(argv):
     if len(argv) < 1:
         print("ERROR: expecting timestamp")
 
     dirpath = "./experiments/"+argv[0]
+    if not os.path.isdir(dirpath + '/graphs'):
+        os.mkdir(dirpath + '/graphs')
 
     def plotGraph(fileName):
         df = pd.read_csv(dirpath+"/measurements/"+fileName+".csv")
