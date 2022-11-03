@@ -4,7 +4,11 @@ import csv
 import sys
 
 # create measurements folder
-os.mkdir('~/experiments/' + sys.argv[1] + '/measurements/')
+if os.path.isdir('./experiments/' + sys.argv[1] + '/measurements'):
+    print('ERROR: measurements folder with same timestamp already exists')
+    sys.exit(1)
+
+os.mkdir('./experiments/' + sys.argv[1] + '/measurements')
 
 # carry out experiments
 for file in ['data-100MB', 'data-200MB', 'data-500MB']:
