@@ -18,7 +18,7 @@ for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 	res = {'2': [], '4': [], '6': []}
 	for i in range(0, 3):
 		for executors in ['2', '4', '6']:
-			out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
+			out = subprocess.run(['ssh', '-i', '~/.ssh/cloud', 'cc-group2@caelum-109.cl.cam.ac.uk', '/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 				--master k8s://https://128.232.80.18:6443 \
 				--deploy-mode cluster \
 				--name group2-wordcount \
@@ -33,7 +33,7 @@ for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.path=/test-data \
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.readOnly=false \
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.options.claimName=nfs-cc-group2 \
-				local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/' + file + '.txt').split(),capture_output=True).stderr
+				local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/' + file + '.txt'],capture_output=True).stderr
 			seconds = float(out.decode('utf-8').strip())
 			print(file + " with " + executors + " executors took " + str(seconds) + "s")
 			res[executors].append(seconds)
