@@ -117,7 +117,7 @@ public class App {
 
         // Output
         try {
-            BufferedWriter w = new BufferedWriter(new FileWriter("/test-data/words_spark"));
+            BufferedWriter w = new BufferedWriter(new FileWriter("/test-data/CloudComputingCoursework_Group2/words_spark"));
 
             for (String s : popular) {
                 System.out.println(s);
@@ -144,7 +144,7 @@ public class App {
         }
 
         try {
-            BufferedWriter w = new BufferedWriter(new FileWriter("/test-data/letters_spark"));
+            BufferedWriter w = new BufferedWriter(new FileWriter("/test-data/CloudComputingCoursework_Group2/letters_spark"));
 
             for (String s : popularL) {
                 System.out.println(s);
