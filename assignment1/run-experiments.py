@@ -46,6 +46,8 @@ for i in range(0, 3):
 		time.sleep(60)
 	os.system('./delete-pods.sh')
 
+	if i==2:
+		break
 	# wait 15 mins before starting next iteration
 	time.sleep(14 * 60)
 	
