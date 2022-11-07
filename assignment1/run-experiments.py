@@ -13,15 +13,14 @@ if os.path.isdir('./experiments/' + sys.argv[1] + '/measurements'):
     sys.exit(1)
 
 os.mkdir('./experiments/' + sys.argv[1] + '/measurements')
-startTimes = {}
+res = {file: {'2': [], '4': [], '6': []} for file in ['data-100MB', 'data-200MB', 'data-500MB']}
+startTimes = {file: {'2': [], '4': [], '6': []} for file in ['data-100MB', 'data-200MB', 'data-500MB']}
 
 # carry out experiments
 for i in range(0, 3):
 	for file in ['data-100MB', 'data-200MB', 'data-500MB']:
-		res = {'2': [], '4': [], '6': []}
-		times = {'2': [], '4': [], '6': []}
 		for executors in ['2', '4', '6']:
-			times[executors].append(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+			startTimes[file][executors].append(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 			out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 				--master k8s://https://128.232.80.18:6443 \
 				--deploy-mode cluster \
@@ -40,27 +39,27 @@ for i in range(0, 3):
 				local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/' + file + '.txt').split(),capture_output=True).stderr
 			seconds = float(out.decode('utf-8').strip())
 			print(file + " with " + executors + " executors took " + str(seconds) + "s")
-			res[executors].append(seconds)
+			res[file][executors].append(seconds)
 		# wait between files
-		startTimes[file] = times
 		time.sleep(60)
 	# wait 15 mins before starting next iteration
 	time.sleep(14 * 60)
 	
 	# write to measurements
+for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 	with open('./experiments/' + sys.argv[1] + '/measurements/' + file + '.csv', 'w', newline='') as f:
 		writer = csv.writer(f)
 		writer.writerow(['Workers', 'Execution Time 1', 'Execution Time 2', 'Execution Time 3'])
-		writer.writerow(['2'] + res['2'])
-		writer.writerow(['4'] + res['4'])
-		writer.writerow(['6'] + res['6'])
+		writer.writerow(['2'] + res[file]['2'])
+		writer.writerow(['4'] + res[file]['4'])
+		writer.writerow(['6'] + res[file]['6'])
 
-	# write to output2
-	with open('output2.csv', 'w', newline='') as f:
-		writer = csv.writer(f)
-		for file in ['data-100MB', 'data-200MB', 'data-500MB']:
-			writer.writerow(['File/Workers', 'Execution Time 1', 'Execution Time 2', 'Execution Time 3'])
-			writer.writerow([file+'/2'] + startTimes[file]['2'])
-			writer.writerow([file+'/4'] + startTimes[file]['4'])
-			writer.writerow([file+'/6'] + startTimes[file]['6'])
+# write to output2
+with open('output2.csv', 'w', newline='') as f:
+	writer = csv.writer(f)
+	for file in ['data-100MB', 'data-200MB', 'data-500MB']:
+		writer.writerow(['File/Workers', 'Execution Time 1', 'Execution Time 2', 'Execution Time 3'])
+		writer.writerow([file+'/2'] + startTimes[file]['2'])
+		writer.writerow([file+'/4'] + startTimes[file]['4'])
+		writer.writerow([file+'/6'] + startTimes[file]['6'])
 		
