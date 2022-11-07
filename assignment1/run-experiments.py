@@ -14,9 +14,9 @@ if os.path.isdir('./experiments/' + sys.argv[1] + '/measurements'):
 os.mkdir('./experiments/' + sys.argv[1] + '/measurements')
 
 # carry out experiments
-for file in ['data-100MB', 'data-200MB', 'data-500MB']:
-	res = {'2': [], '4': [], '6': []}
-	for i in range(0, 3):
+for i in range(0, 3):
+	for file in ['data-100MB', 'data-200MB', 'data-500MB']:
+		res = {'2': [], '4': [], '6': []}
 		for executors in ['2', '4', '6']:
 			out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 				--master k8s://https://128.232.80.18:6443 \
@@ -37,9 +37,10 @@ for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 			seconds = float(out.decode('utf-8').strip())
 			print(file + " with " + executors + " executors took " + str(seconds) + "s")
 			res[executors].append(seconds)
-		
-		# wait 15 mins before starting next iteration
-		time.sleep(15 * 60)
+		# wait between files
+		time.sleep(60)
+	# wait 15 mins before starting next iteration
+	time.sleep(14 * 60)
 	
 	# write to output file
 	with open('./experiments/' + sys.argv[1] + '/measurements/' + file + '.csv', 'w', newline='') as f:
