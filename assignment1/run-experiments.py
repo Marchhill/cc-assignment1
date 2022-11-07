@@ -7,6 +7,8 @@ import time
 import csv
 import sys
 
+print("run experiments")
+
 # create measurements folder
 if os.path.isdir('./experiments/' + sys.argv[1] + '/measurements'):
     print('ERROR: measurements folder with same timestamp already exists')

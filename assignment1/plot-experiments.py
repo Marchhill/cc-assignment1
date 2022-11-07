@@ -6,6 +6,7 @@ import sys
 import os
 
 def main(argv):
+    print("running plot-experiments")
     if len(argv) < 1:
         print("ERROR: expecting timestamp")
         sys.exit(1)

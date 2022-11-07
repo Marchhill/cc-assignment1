@@ -7,12 +7,12 @@ import sys
 import os
 
 def main():
-    argv = ["20221103T232402"]
+    # argv = ["20221103T232402"]
     # if len(argv) < 1:
     #     print("ERROR: expecting timestamp")
     #     sys.exit(1)
 
-    dirpath = "./experiments/"+argv[0]
+    dirpath = "C:/Users/choon/Downloads/20221107T200816"
 
     dfmean = pd.DataFrame()
     dfstd = pd.DataFrame()

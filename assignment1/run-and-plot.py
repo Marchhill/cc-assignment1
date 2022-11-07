@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 import sys
 
+print("starting")
 today = datetime.now()
 # strip away separators and milliseconds
 iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
@@ -14,5 +15,4 @@ if os.path.isdir(f'./experiments/{iso}'):
 
 os.mkdir(f'./experiments/{iso}')
 
-os.system(f'./run-experiments.py {iso}')
-os.system(f'./plot-experiments.py {iso}')
+os.system(f'python3 -u run-experiments.py {iso} && python3 -u plot-experiments.py {iso}')
