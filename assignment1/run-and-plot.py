@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/home/cc-group2/miniconda3/bin/python3
 
 from datetime import datetime
 import os
