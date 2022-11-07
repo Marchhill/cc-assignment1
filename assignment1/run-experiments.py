@@ -57,7 +57,7 @@ for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 		writer.writerow(['6'] + res[file]['6'])
 
 # write to output2
-with open('output2.csv', 'w', newline='') as f:
+with open(f'output2-{sys.argv[1]}.csv', 'w', newline='') as f:
 	writer = csv.writer(f)
 	for file in ['data-100MB', 'data-200MB', 'data-500MB']:
 		writer.writerow(['File/Workers', 'Execution Time 1', 'Execution Time 2', 'Execution Time 3'])
