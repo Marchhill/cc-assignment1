@@ -18,10 +18,9 @@ def main(argv):
         df = pd.read_csv(dirpath+"/measurements/"+fileName+".csv")
         df.set_index('Workers', inplace=True)
 
-        ax = df.plot.bar(rot=0)
+        df.plot(kind="bar")
         plt.ylabel("Time (s)")
-        ax.get_legend().remove()
-        plt.show()
+        plt.title(fileName)
         plt.savefig(dirpath+"/graphs/"+fileName+".pdf")
     
     for name in ['data-100MB', 'data-200MB', 'data-500MB']:

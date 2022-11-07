@@ -31,7 +31,6 @@ def main():
     dfmean.plot(kind='bar', stacked=False, yerr = dfstd)
     plt.ylabel("Time (s)")
     plt.title("WordLetterCount Performance Summary")
-    plt.show()
     plt.savefig("output1.png")
 
     
