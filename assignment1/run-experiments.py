@@ -44,7 +44,8 @@ for i in range(0, 3):
 			res[file][executors].append(seconds)
 		# wait between files
 		time.sleep(60)
-	os.system('./delete-pods.sh')
+	# delete pods
+	os.system('kubectl get pods | grep driver | awk \'{ print "kubectl delete pod "$1 }\' | bash')
 
 	if i==2:
 		break
