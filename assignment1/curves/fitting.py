@@ -9,7 +9,7 @@ workloads = [100,200,500]
 xs = []
 ys = []
 for work in workloads:
-    with open(f'data/20221107T200816/measurements/data-{work}MB.csv') as f:
+    with open(f'data/20221108T000243/measurements/data-{work}MB.csv') as f:
         reader = csv.reader(f)
         next(reader)
         for row in reader:
@@ -25,20 +25,25 @@ def time(workload, executors, constant, parallelisable):
         constant: just a fixed constant
         parallelisable: [0,1] proportion of code that is paralisable
     """
+    # uncomment this to use a log workload function instead
+    # workload = workload * np.log(workload)
     return constant * (workload * (1-parallelisable) + workload * parallelisable / executors)
 
 xs = np.array(xs)
 ys = np.array(ys)
-popt = scipy.optimize.curve_fit(lambda xdata,constant,parallelisable:time(xdata[:,0],xdata[:,1],constant, parallelisable), xs, ys)
+popt, pcov = scipy.optimize.curve_fit(lambda xdata,constant,parallelisable:time(xdata[:,0],xdata[:,1],constant, parallelisable), xs, ys)
 
 print(popt)
+perr = np.sqrt(np.diag(pcov))
+print('errors')
+print(perr)
 
-work = np.linspace(0, 600, 100)
+work = np.linspace(1, 600, 100)
 cores = np.linspace(1,10,50)
 
 X, Y = np.meshgrid(work, cores)
 
-timeVals = time(X,Y,*popt[0])
+timeVals = time(X,Y,*popt)
 
 ax = plt.axes(projection='3d')
 ax.plot_wireframe(X,Y,timeVals,rstride=10,cstride=10)
@@ -49,4 +54,4 @@ ax.set_xlabel('workload')
 ax.set_ylabel('executors')
 ax.set_zlabel('time')
 
-plt.savefig('output.png')
+plt.savefig('3Dplt.png')
