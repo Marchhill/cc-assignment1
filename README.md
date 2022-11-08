@@ -7,12 +7,10 @@
 
 ## Compiling and running
 ```console
-# ensure script is executable
-chmod +x run.sh
+# execute run-and-plot.py
+nohup python3 -u run-and-plot.py > progress.out 2> progress.err &
 
-# compile and run program
-./run.sh
+# follow progress
+tail -f progress.out
+
 ```
-
-## todo
-* correctly package project
