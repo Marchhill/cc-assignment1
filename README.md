@@ -24,12 +24,14 @@ which pip3
 ```
 and ensure it points to the newly install miniconda installation.
 
-We then have to install the following python libraries using pip:
+We then have to install the following python libraries using pip`:
 * Matplotlib
 * Numpy
 * Pandas
 
 ## Compiling and running
+
+The following commands should be run from the directory on caelum that has the python files.
 ```console
 # execute run-and-plot.py
 nohup python3 -u run-and-plot.py > progress.out 2> progress.err &
