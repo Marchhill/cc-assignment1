@@ -15,7 +15,7 @@ if os.path.isdir('./experiments/' + sys.argv[1] + '/measurements'):
     sys.exit(1)
 
 os.mkdir('./experiments/' + sys.argv[1] + '/measurements')
-values = list(map(lambda x: str(x/10), range(5,50,5)))
+values = list(map(lambda x: str(x/10), range(2,11,2)))
 res = {file: {v: [] for v in values} for file in ['data-200MB']}
 # startTimes = {file: {'2': [], '4': [], '6': [], '8': [], '10': []} for file in ['data-200MB']}
 
@@ -29,6 +29,8 @@ for i in range(0, 3):
 				--deploy-mode cluster \
 				--name group2-wordcount \
 				--class com.cloudcomputing.group2.assignment1.App \
+				--conf spark.dynamicAllocation.enabled=true \
+				--conf spark.dynamicAllocation.shuffleTracking.enabled=true \
 				--conf spark.dynamicAllocation.maxExecutors=10 \
 				--conf spark.dynamicAllocation.executorAllocationRatio=' + testValue + '\
 				--conf spark.kubernetes.namespace=cc-group2 \
