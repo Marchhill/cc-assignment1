@@ -1,7 +1,10 @@
 import subprocess
 import random
+import math
 
-RANGES = ((0.0, 1.0), (0.0, 1.0), (0.0, 1.0))
+# params: executorAllocationRation, batch.delay, initialExecutors
+
+RANGES = ((0.75, 1.0), (0.5, 5.0), (1.0, 11.0))
 INITIAL_STEP_SIZE = 0.001
 LEARNING_RATE = 0.01
 
@@ -49,7 +52,6 @@ params = updateParams([])
 history = []
 
 for i in range(0, 20):
-	'''
 	out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 				--master k8s://https://128.232.80.18:6443 \
 				--deploy-mode cluster \
@@ -65,10 +67,12 @@ for i in range(0, 20):
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.readOnly=false \
 				--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.options.claimName=nfs-cc-group2 \
 				--conf spark.dynamicAllocation.enabled=true \
+				--conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+				--conf spark.dynamicAllocation.executorAllocationRatio=' + str(params[0]) + ' \
+				--conf spark.kubernetes.allocation.batch.delay=' + str(params[1]) + ' \
+				--conf spark.dynamicAllocation.initialExecutors=' + str(math.floor(params[2])) + ' \
 				local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/data200MBtxt').split(),capture_output=True).stderr
 	t = float(out.decode('utf-8').strip())
-	'''
-	t = params[0]*params[0] + params[1]*params[1] + params[2]*params[2]
 
 	# create new timestamp folder
 
