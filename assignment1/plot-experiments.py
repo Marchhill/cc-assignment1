@@ -24,7 +24,7 @@ def main(argv):
         plt.title(fileName)
         plt.savefig(dirpath+"/graphs/"+fileName+".pdf")
     
-    for name in ['data-100MB', 'data-200MB', 'data-500MB']:
+    for name in ['data-200MB']:
         plotGraph(name)
     
 
