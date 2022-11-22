@@ -87,13 +87,8 @@ def chooseParams(options):
 	# toTest, toIgnore, history
 	return ([], [], [])
 
-def optimise(toTest, toIgnore, iter):
-	params = updateParams([], toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT)
-	history = []
-
-	for i in range(1, iter + 1):
-		print("trying params: " + str(params))
-		out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
+def runOnCluster(params):
+	out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 					--master k8s://https://128.232.80.18:6443 \
 					--deploy-mode cluster \
 					--name group2-wordcount \
@@ -114,8 +109,16 @@ def optimise(toTest, toIgnore, iter):
 					--conf spark.dynamicAllocation.initialExecutors=' + getParam(params, 'initialExecutors') + ' \
 					local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/data-200MB.txt').split(),capture_output=True).stderr
 		
-		t = float(out.decode('utf-8').strip())
+	return float(out.decode('utf-8').strip())
 
+def optimise(toTest, toIgnore, iter):
+	params = updateParams([], toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT)
+	history = []
+
+	for i in range(1, iter + 1):
+		print("trying params: " + str(params))
+		
+		t = runOnCluster(params)
 		print("t: " + str(t))
 
 		# create new timestamp folder
