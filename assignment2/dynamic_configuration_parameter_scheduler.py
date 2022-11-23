@@ -9,15 +9,13 @@ import math
 RANGES = {
 	'executorAllocationRation': (0.75, 1.0),
 	'batch.delay': (500., 7000.0),
-	'initialExecutors': (1.0, 11.0),
-	'a': (0.4, 3.5)
+	'initialExecutors': (1.0, 11.0)
 }
 
 ISFLOAT = {
 	'executorAllocationRation': True,
 	'batch.delay': False,
-	'initialExecutors': False,
-	'a': False
+	'initialExecutors': False
 }
 
 INITIAL_STEP_SIZE = 0.01
@@ -149,7 +147,7 @@ def optimise(toTest, toIgnore, iter):
 		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
 	return history
 
-toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors','a'])
+toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors'])
 print("selecting params: "+', '.join(toTest))
 print("ignoring param: "+', '.join(toIgnore))
 history += optimise(toTest, toIgnore, 13)
