@@ -1,3 +1,5 @@
+#!/home/cc-group2/miniconda3/bin/python3
+
 import subprocess
 import random
 import math
@@ -59,14 +61,14 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 		# base case - generate random parameter
 		params = {}
 		for param in toTest:
-			params[param] = randomRange(ranges(param))
+			params[param] = randomRange(ranges[param])
 		for param in toIgnore:
 			params[param] = ranges[param][0]
 		
 		return params
 	elif len(h) == 1:
 		# base case - take a random step
-		return makeStep(h[0][0], toTest, randomVector(INITIAL_STEP_SIZE, toTest, ranges), ranges)
+		return makeStep(h[0][0], randomVector(INITIAL_STEP_SIZE, toTest, ranges), toTest, ranges)
 	else:
 		# take step based on previous
 		deltaRes = h[-1][1] - h[-2][1]
@@ -76,7 +78,7 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 			delta = h[-1][0][param] - h[-2][0][param]
 			step[param] = -deltaRes * learningRate * (ranges[param][1] - ranges[param][0]) / delta
 		
-		return makeStep(h[-1][0], step, ranges)
+		return makeStep(h[-1][0], step, toTest, ranges)
 
 def getParam(params, name):
 	x = params[name]
@@ -96,12 +98,13 @@ def chooseParams(options):
 		diff[param] = runOnCluster(baseLineParams)
 		history.append((newParams, diff[param]))
 	
-	sortParams = [p for p in sorted(diff.items(), key=lambda item:item[1], reverse=True)]
+	sortParams = [p for p,v in sorted(diff.items(), key=lambda item:item[1], reverse=True)]
 
 	# toTest, toIgnore, history
 	return (sortParams[:3], sortParams[3:], history)
 
 def runOnCluster(params):
+	# return random.uniform(0,1)
 	out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 					--master k8s://https://128.232.80.18:6443 \
 					--deploy-mode cluster \
@@ -142,8 +145,11 @@ def optimise(toTest, toIgnore, iter):
 
 		# update parameters
 		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
+	return history
 
 toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors'])
+print("selecting params: "+', '.join(toTest))
+print("ignoring param: "+', '.join(toIgnore))
 history += optimise(toTest, toIgnore, 13)
 
 # write history to file
