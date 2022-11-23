@@ -84,8 +84,22 @@ def getParam(params, name):
 	return str(x)
 
 def chooseParams(options):
+	# sets everything to the lower bound
+	baseLineParams = updateParams([],[],options,RANGES, LEARNING_RATE_CONSTANT)
+	baseLineTime = runOnCluster(baseLineParams)
+
+	history = [(baseLineParams, baseLineTime)]
+	diff = {}
+	for param in options:
+		newParams = { x: baseLineParams[x] for x in baseLineParams }
+		newParams[param] = RANGES[param][1]
+		diff[param] = runOnCluster(baseLineParams)
+		history.append((newParams, diff[param]))
+	
+	sortParams = [p for p in sorted(diff.items(), key=lambda item:item[1], reverse=True)]
+
 	# toTest, toIgnore, history
-	return ([], [], [])
+	return (sortParams[:3], sortParams[3:], history)
 
 def runOnCluster(params):
 	out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
