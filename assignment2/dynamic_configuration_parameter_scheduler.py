@@ -9,13 +9,15 @@ import math
 RANGES = {
 	'executorAllocationRation': (0.75, 1.0),
 	'batch.delay': (500., 7000.0),
-	'initialExecutors': (1.0, 11.0)
+	'initialExecutors': (1.0, 11.0),
+	'a': (0.4, 3.5)
 }
 
 ISFLOAT = {
 	'executorAllocationRation': True,
 	'batch.delay': False,
-	'initialExecutors': False
+	'initialExecutors': False,
+	'a': False
 }
 
 INITIAL_STEP_SIZE = 0.01
@@ -98,7 +100,7 @@ def chooseParams(options):
 		diff[param] = runOnCluster(baseLineParams)
 		history.append((newParams, diff[param]))
 	
-	sortParams = [p for p,v in sorted(diff.items(), key=lambda item:item[1], reverse=True)]
+	sortParams = [p for p,v in sorted(diff.items(), key=lambda item: abs(item[1]-baseLineTime), reverse=True)]
 
 	# toTest, toIgnore, history
 	return (sortParams[:3], sortParams[3:], history)
@@ -147,7 +149,7 @@ def optimise(toTest, toIgnore, iter):
 		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
 	return history
 
-toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors'])
+toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors','a'])
 print("selecting params: "+', '.join(toTest))
 print("ignoring param: "+', '.join(toIgnore))
 history += optimise(toTest, toIgnore, 13)
