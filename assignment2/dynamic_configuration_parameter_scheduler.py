@@ -147,11 +147,13 @@ def optimise(toTest, toIgnore, iter):
 		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
 	return history
 
+def writeToFile(history):
+	for i in range(0, len(history)):
+		print("params: " + str(history[i][0]) + " -> " + str(history[i][1]))
+	# todo: actually write to the file!
+
 toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors'])
 print("selecting params: "+', '.join(toTest))
 print("ignoring param: "+', '.join(toIgnore))
 history += optimise(toTest, toIgnore, 13)
-
-# write history to file
-for i in range(0, len(history)):
-	print("params: " + str(history[i][0]) + " -> " + str(history[i][1]))
+writeToFile(history)
