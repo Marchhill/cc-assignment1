@@ -1,19 +1,23 @@
 #!/home/cc-group2/miniconda3/bin/python3
 
+from datetime import datetime
 import subprocess
 import random
 import math
+import sys
+import csv
+import os
 
 # params: executorAllocationRation, batch.delay, initialExecutors
 
 RANGES = {
-	'executorAllocationRation': (0.75, 1.0),
-	'batch.delay': (500., 7000.0),
+	'executorAllocationRatio': (0.75, 1.0),
+	'batchDelay': (500., 7000.0),
 	'initialExecutors': (1.0, 11.0)
 }
 
 ISFLOAT = {
-	'executorAllocationRation': True,
+	'executorAllocationRatio': True,
 	'batch.delay': False,
 	'initialExecutors': False
 }
@@ -147,11 +151,27 @@ def optimise(toTest, toIgnore, iter):
 		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
 	return history
 
+
+today = datetime.now()
+iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
+
 toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors'])
 print("selecting params: "+', '.join(toTest))
 print("ignoring param: "+', '.join(toIgnore))
 history += optimise(toTest, toIgnore, 13)
 
+if not os.path.isdir('./experiments'):
+    os.mkdir('./experiments')
+
+if os.path.isdir(f'./experiments/{iso}'):
+    print('ERROR: folder with same timestamp already exists')
+    sys.exit(1)
+
 # write history to file
-for i in range(0, len(history)):
-	print("params: " + str(history[i][0]) + " -> " + str(history[i][1]))
+with open('./experiments/' + iso + '/dynamic.csv', 'w', newline='') as f:
+	writer = csv.writer(f)
+	print(", ".join(toTest), 'Execution Time')
+	writer.writerow(toTest + ['Execution Time'])
+	for i in range(0, len(history)):
+		print("params: " + str(history[i][0]) + " -> " + str(history[i][1]))
+		writer.writerow(list(history[i][0]) + history[i][1])
