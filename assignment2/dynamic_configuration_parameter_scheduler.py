@@ -53,7 +53,7 @@ def sigmoid(x):
 	return 1 / (1 + math.e ** (-x))
 
 def sigmoid_inv(y):
-	return -math.log(1/y - 1)
+	return -math.log(1/(y*0.99+0.001) - 1)
 
 REPULSION = 1/4
 def repulse(val, low, high):
