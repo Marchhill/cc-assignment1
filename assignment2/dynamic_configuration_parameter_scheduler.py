@@ -105,7 +105,7 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 
 		for param in toTest:
 			delta = (h[-1][0][param] - h[-2][0][param]) / (ranges[param][1] - ranges[param][0])
-			step[param] = -deltaRes * learningRate * delta
+			step[param] = -deltaRes * learningRate / delta
 		
 		return makeStep(h[-1][0], step, toTest, ranges)
 
