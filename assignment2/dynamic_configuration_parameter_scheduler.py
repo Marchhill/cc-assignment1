@@ -46,7 +46,7 @@ PROP = {
 	'schedulerBacklogTimeout': "--conf spark.dynamicAllocation.schedulerBacklogTimeout="
 }
 
-INITIAL_STEP_SIZE = 0.02
+INITIAL_STEP_SIZE = 0.05
 LEARNING_RATE_CONSTANT = 0.05
 
 def sigmoid(x):
