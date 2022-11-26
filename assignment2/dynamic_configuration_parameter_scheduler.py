@@ -8,18 +8,42 @@ import sys
 import csv
 import os
 
-# params: executorAllocationRation, batch.delay, initialExecutors
+NAMES = ['executorAllocationRatio', 'batchDelay', 'initialExecutors', 'defaultParallelism', 'batchSize', 'schedulerBacklogTimeout']
 
 RANGES = {
 	'executorAllocationRatio': (0.75, 1.0),
 	'batchDelay': (500., 7000.0),
-	'initialExecutors': (1.0, 11.0)
+	'initialExecutors': (1.0, 11.0),
+	'defaultParallelism': (1.0, 21.0),
+	'batchSize': (1.0, 21.0),
+	'schedulerBacklogTimeout': (1.0, 21.0)
 }
 
 ISFLOAT = {
 	'executorAllocationRatio': True,
-	'batch.delay': False,
-	'initialExecutors': False
+	'batchDelay': False,
+	'initialExecutors': False,
+	'defaultParallelism': False,
+	'batchSize': False,
+	'schedulerBacklogTimeout': False
+}
+
+UNITS = {
+	'executorAllocationRatio': "",
+	'batchDelay': "ms",
+	'initialExecutors': "",
+	'defaultParallelism': "",
+	'batchSize': "",
+	'schedulerBacklogTimeout': "s"
+}
+
+PROP = {
+	'executorAllocationRatio': "--conf spark.dynamicAllocation.executorAllocationRatio=",
+	'batchDelay': "--conf spark.kubernetes.allocation.batch.delay=",
+	'initialExecutors': "--conf spark.dynamicAllocation.initialExecutors=",
+	'defaultParallelism': "--conf spark.default.parallelism=",
+	'batchSize': "--conf spark.kubernetes.allocation.batch.size=",
+	'schedulerBacklogTimeout': "--conf spark.dynamicAllocation.schedulerBacklogTimeout="
 }
 
 INITIAL_STEP_SIZE = 0.01
@@ -67,7 +91,7 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 		for param in toTest:
 			params[param] = randomRange(ranges[param])
 		for param in toIgnore:
-			params[param] = ranges[param][0]
+			params[param] = ranges[param][0]  # TODO: Replace with default..?
 		
 		return params
 	elif len(h) == 1:
@@ -87,19 +111,27 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 def getParam(params, name):
 	x = params[name]
 	x = x if ISFLOAT[name] else math.floor(x)
-	return str(x)
+	x = str(x) + UNITS[name]
+	return x
+
+def getConfig(params, names):
+	conf = ""
+	for name in names:
+		conf += PROP[name] + getParam(params, name) + " "
+	return conf
+
 
 def chooseParams(options):
 	# sets everything to the lower bound
 	baseLineParams = updateParams([],[],options,RANGES, LEARNING_RATE_CONSTANT)
-	baseLineTime = runOnCluster(baseLineParams)
+	baseLineTime = runOnCluster(baseLineParams, options)
 
 	history = [(baseLineParams, baseLineTime)]
 	diff = {}
 	for param in options:
 		newParams = { x: baseLineParams[x] for x in baseLineParams }
 		newParams[param] = RANGES[param][1]
-		diff[param] = runOnCluster(baseLineParams)
+		diff[param] = runOnCluster(baseLineParams, options)
 		history.append((newParams, diff[param]))
 	
 	sortParams = [p for p,v in sorted(diff.items(), key=lambda item: abs(item[1]-baseLineTime), reverse=True)]
@@ -107,7 +139,7 @@ def chooseParams(options):
 	# toTest, toIgnore, history
 	return (sortParams[:3], sortParams[3:], history)
 
-def runOnCluster(params):
+def runOnCluster(params, names):
 	# return random.uniform(0,1)
 	out = subprocess.run(('/usr/bin/time --format %e ./spark-3.3.0-bin-hadoop3/bin/spark-submit \
 					--master k8s://https://128.232.80.18:6443 \
@@ -124,12 +156,9 @@ def runOnCluster(params):
 					--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.mount.readOnly=false \
 					--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.options.claimName=nfs-cc-group2 \
 					--conf spark.dynamicAllocation.enabled=true \
-					--conf spark.dynamicAllocation.shuffleTracking.enabled=true \
-					--conf spark.dynamicAllocation.executorAllocationRatio=' + getParam(params, 'executorAllocationRation') + ' \
-					--conf spark.kubernetes.allocation.batch.delay=' + getParam(params, 'batch.delay') + 'ms \
-					--conf spark.dynamicAllocation.initialExecutors=' + getParam(params, 'initialExecutors') + ' \
+					--conf spark.dynamicAllocation.shuffleTracking.enabled=true ' + getConfig(params, names) + ' \
 					local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/data-200MB.txt').split(),capture_output=True).stderr
-		
+	os.system('kubectl get pods | grep driver | awk \'{ print "kubectl delete pod "$1 }\' | bash')
 	return float(out.decode('utf-8').strip())
 
 def optimise(toTest, toIgnore, iter):
@@ -139,7 +168,7 @@ def optimise(toTest, toIgnore, iter):
 	for i in range(1, iter + 1):
 		print("trying params: " + str(params))
 		
-		t = runOnCluster(params)
+		t = runOnCluster(params, toTest)
 		print("t: " + str(t))
 
 		# create new timestamp folder
@@ -155,7 +184,8 @@ def optimise(toTest, toIgnore, iter):
 today = datetime.now()
 iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
 
-toTest, toIgnore, history = chooseParams(['executorAllocationRation', 'batch.delay', 'initialExecutors'])
+print("running")
+toTest, toIgnore, history = chooseParams(NAMES)
 print("selecting params: "+', '.join(toTest))
 print("ignoring param: "+', '.join(toIgnore))
 history += optimise(toTest, toIgnore, 13)
@@ -167,11 +197,17 @@ if os.path.isdir(f'./experiments/{iso}'):
     print('ERROR: folder with same timestamp already exists')
     sys.exit(1)
 
+os.mkdir(f'./experiments/{iso}')
+
 # write history to file
 with open('./experiments/' + iso + '/dynamic.csv', 'w', newline='') as f:
 	writer = csv.writer(f)
 	print(", ".join(toTest), 'Execution Time')
 	writer.writerow(toTest + ['Execution Time'])
 	for i in range(0, len(history)):
-		print("params: " + str(history[i][0]) + " -> " + str(history[i][1]))
-		writer.writerow(list(history[i][0]) + history[i][1])
+		row = []
+		for name in toTest:
+			row.append(history[i][0].get(name))
+		row.append(history[i][1])
+		writer.writerow(row)
+		print(row)
