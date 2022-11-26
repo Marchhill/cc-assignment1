@@ -180,7 +180,6 @@ def optimise(toTest, toIgnore, iter):
 		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
 	return history
 
-
 today = datetime.now()
 iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
 
