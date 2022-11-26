@@ -46,6 +46,15 @@ PROP = {
 	'schedulerBacklogTimeout': "--conf spark.dynamicAllocation.schedulerBacklogTimeout="
 }
 
+DEFAULTS = {
+	'executorAllocationRatio': 1.0,
+	'batchDelay': 1.0,
+	'initialExecutors': 0.0,
+	'defaultParallelism': 5.0, #need to confirm
+	'batchSize': 5,
+	'schedulerBacklogTimeout': 1.0
+}
+
 INITIAL_STEP_SIZE = 0.02
 LEARNING_RATE_CONSTANT = 0.05
 
@@ -57,7 +66,7 @@ def repulse(val, low, high):
 	# val=high is mapped to x=1/REPULSION
 	# val=low is mapped to x=-1/REPULSION
 	# sigmoid=1 is mapped to high
-	# sigmoid = 0 is mapped to low
+	# sigmoid=0 is mapped to low
 	repulseBound = 1/REPULSION
 	adjVal = (val - low) / (high - low) * 2 * repulseBound - repulseBound
 	return sigmoid(adjVal) * (high - low) + low
@@ -221,7 +230,7 @@ with open('./experiments/' + iso + '/dynamic.csv', 'w', newline='') as f:
 		for name in toTest:
 			row.append(history[i][0].get(name))
 		for name in toIgnore:
-			row.append(history[i][0].get(name,""))
+			row.append(DEFAULTS[name])
 		row.append(history[i][1])
 		writer.writerow(row)
 		print(row)
