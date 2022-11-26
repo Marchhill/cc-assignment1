@@ -46,8 +46,8 @@ PROP = {
 	'schedulerBacklogTimeout': "--conf spark.dynamicAllocation.schedulerBacklogTimeout="
 }
 
-INITIAL_STEP_SIZE = 0.01
-LEARNING_RATE_CONSTANT = 0.02
+INITIAL_STEP_SIZE = 0.02
+LEARNING_RATE_CONSTANT = 0.05
 
 def randomRange(r):
 	return (random.random() * (r[1] - r[0])) + r[0]

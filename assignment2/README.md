@@ -28,7 +28,7 @@ and ensure it points to the newly install miniconda installation.
 
 The following commands should be run from the directory on caelum home directory that 'dynamic_configuration_parameter_scheduler.py' has been extracted to.
 ```console
-# execute run-and-plot.py
+# execute script
 nohup python3 -u dynamic_configuration_parameter_scheduler.py > progress.out 2> progress.err &
 
 # follow progress
