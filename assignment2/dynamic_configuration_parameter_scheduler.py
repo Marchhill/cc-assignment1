@@ -90,8 +90,9 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 		params = {}
 		for param in toTest:
 			params[param] = randomRange(ranges[param])
-		for param in toIgnore:
-			params[param] = ranges[param][0]  # TODO: Replace with default..?
+		# should not set ignored params but let them be defaulted
+		# for param in toIgnore:
+		# 	params[param] = ranges[param][0]
 		
 		return params
 	elif len(h) == 1:
@@ -121,16 +122,18 @@ def getConfig(params, names):
 	return conf
 
 
-def chooseParams(options):
+def chooseParams(options, ranges):
 	# sets everything to the lower bound
-	baseLineParams = updateParams([],[],options,RANGES, LEARNING_RATE_CONSTANT)
+	baseLineParams = {}
+	for param in options:
+		baseLineParams[param] = ranges[param][0]
 	baseLineTime = runOnCluster(baseLineParams, options)
 
 	history = [(baseLineParams, baseLineTime)]
 	diff = {}
 	for param in options:
 		newParams = { x: baseLineParams[x] for x in baseLineParams }
-		newParams[param] = RANGES[param][1]
+		newParams[param] = ranges[param][1]
 		diff[param] = runOnCluster(baseLineParams, options)
 		history.append((newParams, diff[param]))
 	
@@ -184,7 +187,7 @@ today = datetime.now()
 iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
 
 print("running")
-toTest, toIgnore, history = chooseParams(NAMES)
+toTest, toIgnore, history = chooseParams(NAMES, RANGES)
 print("selecting params: "+', '.join(toTest))
 print("ignoring param: "+', '.join(toIgnore))
 history += optimise(toTest, toIgnore, 13)
