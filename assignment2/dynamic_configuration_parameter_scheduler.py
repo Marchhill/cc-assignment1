@@ -61,6 +61,9 @@ LEARNING_RATE_CONSTANT = 0.05
 def sigmoid(x):
 	return 1 / (1 + math.e ** (-x))
 
+def sigmoid_inv(y):
+	return -math.log(1/y - 1)
+
 REPULSION = 1/4
 def repulse(val, low, high):
 	# val=high is mapped to x=1/REPULSION
@@ -71,6 +74,10 @@ def repulse(val, low, high):
 	adjVal = (val - low) / (high - low) * 2 * repulseBound - repulseBound
 	return sigmoid(adjVal) * (high - low) + low
 
+def repulse_inv(val, low, high):
+	repulseBound = 1/REPULSION
+	adjVal = sigmoid_inv((val-low)/(high-low))
+	return (adjVal + repulseBound) * (high - low) / (2 * repulseBound) + low
 
 def randomRange(r):
 	return (random.random() * (r[1] - r[0])) + r[0]
@@ -79,9 +86,11 @@ def makeStep(start, step, toTest, ranges):
 	res = {}
 
 	for param in toTest:
-		res[param] = start[param] + step[param]
 		lo = ranges[param][0]
 		hi = ranges[param][1]
+		# take the step on the unrepulsed value, then repulse it back again
+		res[param] = repulse_inv(start[param], lo, hi) + step[param]
+		print(f'debug: unbounded stepping {param} -> {res[param]}')
 		res[param] = repulse(res[param], lo, hi)
 	
 	return res
