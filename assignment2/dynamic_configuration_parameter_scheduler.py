@@ -201,12 +201,14 @@ os.mkdir(f'./experiments/{iso}')
 # write history to file
 with open('./experiments/' + iso + '/dynamic.csv', 'w', newline='') as f:
 	writer = csv.writer(f)
-	print(", ".join(toTest), 'Execution Time')
-	writer.writerow(toTest + ['Execution Time'])
+	print(", ".join(toTest + toIgnore), 'Execution Time')
+	writer.writerow(toTest + toIgnore + ['Execution Time'])
 	for i in range(0, len(history)):
 		row = []
 		for name in toTest:
 			row.append(history[i][0].get(name))
+		for name in toIgnore:
+			row.append(history[i][0].get(name,""))
 		row.append(history[i][1])
 		writer.writerow(row)
 		print(row)
