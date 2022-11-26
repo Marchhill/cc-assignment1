@@ -49,6 +49,20 @@ PROP = {
 INITIAL_STEP_SIZE = 0.02
 LEARNING_RATE_CONSTANT = 0.05
 
+def sigmoid(x):
+	return 1 / (1 + math.e ** (-x))
+
+REPULSION = 1/4
+def repulse(val, low, high):
+	# val=high is mapped to x=1/REPULSION
+	# val=low is mapped to x=-1/REPULSION
+	# sigmoid=1 is mapped to high
+	# sigmoid = 0 is mapped to low
+	repulseBound = 1/REPULSION
+	adjVal = (val - low) / (high - low) * 2 * repulseBound - repulseBound
+	return sigmoid(adjVal) * (high - low) + low
+
+
 def randomRange(r):
 	return (random.random() * (r[1] - r[0])) + r[0]
 
@@ -59,11 +73,7 @@ def makeStep(start, step, toTest, ranges):
 		res[param] = start[param] + step[param]
 		lo = ranges[param][0]
 		hi = ranges[param][1]
-		while res[param] < lo or res[param] > hi:
-			if res[param] < lo:
-				res[param] = lo + (lo - res[param])
-			elif res[param] > hi:
-				res[param] = hi - (res[param] - hi)
+		res[param] = repulse(res[param], lo, hi)
 	
 	return res
 
