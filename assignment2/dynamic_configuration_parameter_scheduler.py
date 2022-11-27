@@ -72,10 +72,11 @@ def repulse_inv(val, low, high):
 	adjVal = sigmoid_inv((val-low)/(high-low))
 	return (adjVal + repulseBound) * (high - low) / (2 * repulseBound) + low
 
+# selects a float within the specified range
 def randomRange(r):
-	# selects a random starting point within the specified range
 	return (random.random() * (r[1] - r[0])) + r[0]
 
+# modify parameters by some step value
 def makeStep(start, step, toTest):
 	res = {}
 
@@ -101,7 +102,7 @@ def changeVector(length, toTest, ranges, changes):
 	return vec
 
 # use history to calculate the new params
-def updateParams(h, toTest, toIgnore, ranges, learningRate, changes):
+def updateParams(h, toTest, ranges, learningRate, changes):
 	if len(h) == 0:
 		# base case - generate random parameter
 		params = {}
@@ -140,7 +141,6 @@ def getConfig(params, names):
 
 
 def chooseParams(options, ranges):
-	# return (options[:3], options[3:], [])
 	# sets everything to the lower bound
 	baseLineParams = {}
 	for param in options:
@@ -154,10 +154,17 @@ def chooseParams(options, ranges):
 	for param in options:
 		newParams = { x: baseLineParams[x] for x in baseLineParams }
 		newParams[param] = ranges[param][1]
+
+		# run on cluster with param set to upper bound
 		diff[param] = runOnCluster(baseLineParams, options)
+
+		# record results
 		history.append((newParams, diff[param]))
+
+		# record which direction the descent should start in
 		change[param] = 1 if diff[param] - baseLineTime > 0 else -1
 	
+	# sort the parameters by time difference so we can take the 3 most influential
 	sortParams = [p for p,v in sorted(diff.items(), key=lambda item: abs(item[1]-baseLineTime), reverse=True)]
 
 	# toTest, toIgnore, history
@@ -185,23 +192,27 @@ def runOnCluster(params, names):
 	os.system('kubectl get pods | grep driver | awk \'{ print "kubectl delete pod "$1 }\' | bash')
 	return float(out.decode('utf-8').strip())
 
-def optimise(toTest, toIgnore, iter, changes):
-	params = updateParams([], toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT, changes)
+def optimise(toTest, iter, changes):
+	params = updateParams([], toTest, RANGES, LEARNING_RATE_CONSTANT, changes)
 	history = []
 
 	for i in range(1, iter + 1):
 		print("trying params: " + str(params))
+
+		# use repulsion function to ensure parameters are within bounds
 		boundParams = {k:repulse(v,*RANGES[k]) for k,v in params.items()}
 		print("bound values: " + str(boundParams))
 		
+		# run on the cluster using the bounded parameters
 		t = runOnCluster(boundParams, toTest)
 		print("t: " + str(t))
 
-		# update history
+		# update history (store unbounded parameters to prevent overflow errors)
 		history.append((params, t))
 
 		# update parameters
-		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i, changes)
+		params = updateParams(history, toTest, RANGES, LEARNING_RATE_CONSTANT / i, changes)
+	
 	# return a bounded parameter history
 	return [({k:repulse(v,*RANGES[k]) for k,v in params.items()}, t) for params,t in history]
 
@@ -213,7 +224,7 @@ def main():
 	toTest, toIgnore, history, change = chooseParams(NAMES, RANGES)
 	print("selecting params: "+', '.join(toTest))
 	print("ignoring param: "+', '.join(toIgnore))
-	history += optimise(toTest, toIgnore, 13, change)
+	history += optimise(toTest, 13, change)
 
 	if not os.path.isdir('./experiments'):
 		os.mkdir('./experiments')
