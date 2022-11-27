@@ -13,7 +13,7 @@ NAMES = ['executorAllocationRatio', 'batchDelay', 'initialExecutors', 'defaultPa
 RANGES = {
 	'executorAllocationRatio': (0.75, 1.0),
 	'batchDelay': (500., 7000.0),
-	'initialExecutors': (1.0, 11.0),
+	'initialExecutors': (1.0, 10.5),
 	'defaultParallelism': (1.0, 21.0),
 	'batchSize': (1.0, 21.0),
 	'schedulerBacklogTimeout': (1.0, 21.0)
