@@ -87,12 +87,12 @@ def makeStep(start, step, toTest, ranges):
 	
 	return res
 
-def randomVector(length, toTest, ranges):
+def changeVector(length, toTest, ranges, changes):
 	vec = {}
 	mag = 0
 
 	for param in toTest:
-		r = random.gauss(0, 1)
+		r = changes[param] * abs(random.gauss(0, 1))
 		vec[param] = r
 		mag += r**2
 
@@ -104,7 +104,7 @@ def randomVector(length, toTest, ranges):
 	return vec
 
 # use history to calculate the new params
-def updateParams(h, toTest, toIgnore, ranges, learningRate):
+def updateParams(h, toTest, toIgnore, ranges, learningRate, changes):
 	if len(h) == 0:
 		# base case - generate random parameter
 		params = {}
@@ -116,8 +116,8 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 		
 		return params
 	elif len(h) == 1:
-		# base case - take a random step
-		return makeStep(h[0][0], randomVector(INITIAL_STEP_SIZE, toTest, ranges), toTest, ranges)
+		# take a step towards the direction that reduces the time
+		return makeStep(h[0][0], changeVector(INITIAL_STEP_SIZE, toTest, ranges, changes), toTest, ranges)
 	else:
 		# take step based on previous
 		deltaRes = h[-1][1] - h[-2][1]
@@ -145,6 +145,7 @@ def getConfig(params, names):
 
 
 def chooseParams(options, ranges):
+	# return (options[:3], options[3:], [])
 	# sets everything to the lower bound
 	baseLineParams = {}
 	for param in options:
@@ -153,16 +154,18 @@ def chooseParams(options, ranges):
 
 	history = [(baseLineParams, baseLineTime)]
 	diff = {}
+	change = {}
 	for param in options:
 		newParams = { x: baseLineParams[x] for x in baseLineParams }
 		newParams[param] = ranges[param][1]
 		diff[param] = runOnCluster(baseLineParams, options)
 		history.append((newParams, diff[param]))
+		change[param] = -1 if diff[param] - baseLineTime > 0 else 1
 	
 	sortParams = [p for p,v in sorted(diff.items(), key=lambda item: abs(item[1]-baseLineTime), reverse=True)]
 
 	# toTest, toIgnore, history
-	return (sortParams[:3], sortParams[3:], history)
+	return (sortParams[:3], sortParams[3:], history, change)
 
 def runOnCluster(params, names):
 	# return random.uniform(0,1)
@@ -186,8 +189,8 @@ def runOnCluster(params, names):
 	os.system('kubectl get pods | grep driver | awk \'{ print "kubectl delete pod "$1 }\' | bash')
 	return float(out.decode('utf-8').strip())
 
-def optimise(toTest, toIgnore, iter):
-	params = updateParams([], toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT)
+def optimise(toTest, toIgnore, iter, changes):
+	params = updateParams([], toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT, changes)
 	history = []
 
 	for i in range(1, iter + 1):
@@ -204,7 +207,7 @@ def optimise(toTest, toIgnore, iter):
 		history.append((params, t))
 
 		# update parameters
-		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
+		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i, changes)
 	# return a bounded parameter history
 	return [({k:repulse(v,*RANGES[k]) for k,v in params.items()}, t) for params,t in history]
 
@@ -212,10 +215,10 @@ today = datetime.now()
 iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
 
 print("running")
-toTest, toIgnore, history = chooseParams(NAMES, RANGES)
+toTest, toIgnore, history, change = chooseParams(NAMES, RANGES)
 print("selecting params: "+', '.join(toTest))
 print("ignoring param: "+', '.join(toIgnore))
-history += optimise(toTest, toIgnore, 13)
+history += optimise(toTest, toIgnore, 13, change)
 
 if not os.path.isdir('./experiments'):
     os.mkdir('./experiments')
