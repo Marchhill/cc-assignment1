@@ -41,4 +41,5 @@ The script assumes that the filename is relative to the directory /test-data/
 ## Output format
 The program will output to experiments/[current timestamp]/dynamic.csv
 
-*todo: describe the output format!*
+The first seven iterations will include the parameter configurations for all six values, as well as the execution time.
+The rows representing the results of the subsequent thirteen iterations will only include the selected parameters, leaving the rest blank as they will be configured to their default values.
