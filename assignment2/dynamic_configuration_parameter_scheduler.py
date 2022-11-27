@@ -252,7 +252,7 @@ def main():
 
 if __name__ == "__main__":
 	if len(sys.argv) != 2:
-		print('ERROR: folder with same timestamp already exists')
+		print('ERROR: must provide an argument!')
 		sys.exit(1)
 	
 	FILE = sys.argv[1]
