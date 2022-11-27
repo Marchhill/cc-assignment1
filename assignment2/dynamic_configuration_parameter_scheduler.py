@@ -77,12 +77,13 @@ def makeStep(start, step, toTest, ranges):
 	res = {}
 
 	for param in toTest:
-		lo = ranges[param][0]
-		hi = ranges[param][1]
+		# lo = ranges[param][0]
+		# hi = ranges[param][1]
+		res[param] = start[param] + step[param]
 		# take the step on the unrepulsed value, then repulse it back again
-		res[param] = repulse_inv(start[param], lo, hi) + step[param]
-		print(f'debug: unbounded stepping {param} -> {res[param]}')
-		res[param] = repulse(res[param], lo, hi)
+		# res[param] = repulse_inv(start[param], lo, hi) + step[param]
+		# print(f'debug: unbounded stepping {param} -> {res[param]}')
+		# res[param] = repulse(res[param], lo, hi)
 	
 	return res
 
@@ -125,7 +126,7 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate):
 		for param in toTest:
 			lo = ranges[param][0]
 			hi = ranges[param][1]
-			delta = (repulse_inv(h[-1][0][param], lo, hi) - repulse_inv(h[-2][0][param], lo, hi)) / (ranges[param][1] - ranges[param][0])
+			delta = (h[-1][0][param] - h[-2][0][param]) / (ranges[param][1] - ranges[param][0])
 			step[param] = -deltaRes * learningRate / delta
 		
 		return makeStep(h[-1][0], step, toTest, ranges)
@@ -191,8 +192,10 @@ def optimise(toTest, toIgnore, iter):
 
 	for i in range(1, iter + 1):
 		print("trying params: " + str(params))
+		boundParams = {k:repulse(v,*RANGES[k]) for k,v in params.items()}
+		print("bound values: " + str(boundParams))
 		
-		t = runOnCluster(params, toTest)
+		t = runOnCluster(boundParams, toTest)
 		print("t: " + str(t))
 
 		# create new timestamp folder
@@ -202,7 +205,8 @@ def optimise(toTest, toIgnore, iter):
 
 		# update parameters
 		params = updateParams(history, toTest, toIgnore, RANGES, LEARNING_RATE_CONSTANT / i)
-	return history
+	# return a bounded parameter history
+	return [({k:repulse(v,*RANGES[k]) for k,v in params.items()}, t) for params,t in history]
 
 today = datetime.now()
 iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
