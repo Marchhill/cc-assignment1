@@ -8,6 +8,8 @@ import sys
 import csv
 import os
 
+FILE = ""
+
 NAMES = ['executorAllocationRatio', 'batchDelay', 'initialExecutors', 'defaultParallelism', 'batchSize', 'schedulerBacklogTimeout']
 
 RANGES = {
@@ -71,19 +73,14 @@ def repulse_inv(val, low, high):
 	return (adjVal + repulseBound) * (high - low) / (2 * repulseBound) + low
 
 def randomRange(r):
+	# selects a random starting point within the specified range
 	return (random.random() * (r[1] - r[0])) + r[0]
 
-def makeStep(start, step, toTest, ranges):
+def makeStep(start, step, toTest):
 	res = {}
 
 	for param in toTest:
-		# lo = ranges[param][0]
-		# hi = ranges[param][1]
 		res[param] = start[param] + step[param]
-		# take the step on the unrepulsed value, then repulse it back again
-		# res[param] = repulse_inv(start[param], lo, hi) + step[param]
-		# print(f'debug: unbounded stepping {param} -> {res[param]}')
-		# res[param] = repulse(res[param], lo, hi)
 	
 	return res
 
@@ -111,13 +108,11 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate, changes):
 		for param in toTest:
 			params[param] = randomRange(ranges[param])
 		# should not set ignored params but let them be defaulted
-		# for param in toIgnore:
-		# 	params[param] = ranges[param][0]
 		
 		return params
 	elif len(h) == 1:
 		# take a step towards the direction that reduces the time
-		return makeStep(h[0][0], changeVector(INITIAL_STEP_SIZE, toTest, ranges, changes), toTest, ranges)
+		return makeStep(h[0][0], changeVector(INITIAL_STEP_SIZE, toTest, ranges, changes), toTest)
 	else:
 		# take step based on previous
 		deltaRes = h[-1][1] - h[-2][1]
@@ -129,7 +124,7 @@ def updateParams(h, toTest, toIgnore, ranges, learningRate, changes):
 			delta = (h[-1][0][param] - h[-2][0][param]) / (ranges[param][1] - ranges[param][0])
 			step[param] = -deltaRes * learningRate / delta
 		
-		return makeStep(h[-1][0], step, toTest, ranges)
+		return makeStep(h[-1][0], step, toTest)
 
 def getParam(params, name):
 	x = params[name]
@@ -155,12 +150,13 @@ def chooseParams(options, ranges):
 	history = [(baseLineParams, baseLineTime)]
 	diff = {}
 	change = {}
+	# testing each param in turn by running it on the cluster, setting each to their upper bound
 	for param in options:
 		newParams = { x: baseLineParams[x] for x in baseLineParams }
 		newParams[param] = ranges[param][1]
 		diff[param] = runOnCluster(baseLineParams, options)
 		history.append((newParams, diff[param]))
-		change[param] = -1 if diff[param] - baseLineTime > 0 else 1
+		change[param] = 1 if diff[param] - baseLineTime > 0 else -1
 	
 	sortParams = [p for p,v in sorted(diff.items(), key=lambda item: abs(item[1]-baseLineTime), reverse=True)]
 
@@ -185,7 +181,7 @@ def runOnCluster(params, names):
 					--conf spark.kubernetes.executor.volumes.persistentVolumeClaim.nfs-cc-group2.options.claimName=nfs-cc-group2 \
 					--conf spark.dynamicAllocation.enabled=true \
 					--conf spark.dynamicAllocation.shuffleTracking.enabled=true ' + getConfig(params, names) + ' \
-					local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/data-200MB.txt').split(),capture_output=True).stderr
+					local:///test-data/assignment1-1.0-SNAPSHOT.jar /test-data/'+FILE).split(),capture_output=True).stderr
 	os.system('kubectl get pods | grep driver | awk \'{ print "kubectl delete pod "$1 }\' | bash')
 	return float(out.decode('utf-8').strip())
 
@@ -201,9 +197,7 @@ def optimise(toTest, toIgnore, iter, changes):
 		t = runOnCluster(boundParams, toTest)
 		print("t: " + str(t))
 
-		# create new timestamp folder
-
-		#update history
+		# update history
 		history.append((params, t))
 
 		# update parameters
@@ -211,35 +205,44 @@ def optimise(toTest, toIgnore, iter, changes):
 	# return a bounded parameter history
 	return [({k:repulse(v,*RANGES[k]) for k,v in params.items()}, t) for params,t in history]
 
-today = datetime.now()
-iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
+def main():
+	today = datetime.now()
+	iso = today.isoformat().replace("-", "").replace(":", "").replace(".", "")[:-6]
 
-print("running")
-toTest, toIgnore, history, change = chooseParams(NAMES, RANGES)
-print("selecting params: "+', '.join(toTest))
-print("ignoring param: "+', '.join(toIgnore))
-history += optimise(toTest, toIgnore, 13, change)
+	print("running")
+	toTest, toIgnore, history, change = chooseParams(NAMES, RANGES)
+	print("selecting params: "+', '.join(toTest))
+	print("ignoring param: "+', '.join(toIgnore))
+	history += optimise(toTest, toIgnore, 13, change)
 
-if not os.path.isdir('./experiments'):
-    os.mkdir('./experiments')
+	if not os.path.isdir('./experiments'):
+		os.mkdir('./experiments')
 
-if os.path.isdir(f'./experiments/{iso}'):
-    print('ERROR: folder with same timestamp already exists')
-    sys.exit(1)
+	if os.path.isdir(f'./experiments/{iso}'):
+		print('ERROR: folder with same timestamp already exists')
+		sys.exit(1)
 
-os.mkdir(f'./experiments/{iso}')
+	os.mkdir(f'./experiments/{iso}')
 
-# write history to file
-with open('./experiments/' + iso + '/dynamic.csv', 'w', newline='') as f:
-	writer = csv.writer(f)
-	print(", ".join(toTest + toIgnore), 'Execution Time')
-	writer.writerow(toTest + toIgnore + ['Execution Time'])
-	for i in range(0, len(history)):
-		row = []
-		for name in toTest:
-			row.append(history[i][0].get(name))
-		for name in toIgnore:
-			row.append(history[i][0].get(name, ""))
-		row.append(history[i][1])
-		writer.writerow(row)
-		print(row)
+	# write history to file
+	with open('./experiments/' + iso + '/dynamic.csv', 'w', newline='') as f:
+		writer = csv.writer(f)
+		print(", ".join(toTest + toIgnore), 'Execution Time')
+		writer.writerow(toTest + toIgnore + ['Execution Time'])
+		for i in range(0, len(history)):
+			row = []
+			for name in toTest:
+				row.append(history[i][0].get(name))
+			for name in toIgnore:
+				row.append(history[i][0].get(name, ""))
+			row.append(history[i][1])
+			writer.writerow(row)
+			print(row)
+
+if __name__ == "__main__":
+	if len(sys.argv) != 2:
+		print('ERROR: folder with same timestamp already exists')
+		sys.exit(1)
+	
+	FILE = sys.argv[1]
+	main()
