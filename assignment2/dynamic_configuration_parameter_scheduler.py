@@ -55,7 +55,7 @@ def sigmoid(x):
 def sigmoid_inv(y):
 	return -math.log(1/(y*0.99+0.001) - 1)
 
-REPULSION = 1/4
+REPULSION = 0.5
 def repulse(val, low, high):
 	# val=high is mapped to x=1/REPULSION
 	# val=low is mapped to x=-1/REPULSION
