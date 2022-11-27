@@ -29,12 +29,14 @@ and ensure it points to the newly install miniconda installation.
 The following commands should be run from the directory on caelum home directory that 'dynamic_configuration_parameter_scheduler.py' has been extracted to.
 ```console
 # execute script
-nohup python3 -u dynamic_configuration_parameter_scheduler.py > progress.out 2> progress.err &
+nohup python3 -u dynamic_configuration_parameter_scheduler.py [filename] > progress.out 2> progress.err &
 
 # follow progress
 tail -f progress.out
 
 ```
+
+The script assumes that the filename is relative to the directory /test-data/
 
 ## Output format
 The program will output to experiments/[current timestamp]/dynamic.csv
