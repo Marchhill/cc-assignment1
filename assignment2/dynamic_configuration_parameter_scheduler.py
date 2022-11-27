@@ -162,7 +162,7 @@ def chooseParams(options, ranges):
 		history.append((newParams, diff[param]))
 
 		# record which direction the descent should start in
-		change[param] = 1 if diff[param] - baseLineTime > 0 else -1
+		change[param] = -1 if diff[param] - baseLineTime > 0 else 1
 	
 	# sort the parameters by time difference so we can take the 3 most influential
 	sortParams = [p for p,v in sorted(diff.items(), key=lambda item: abs(item[1]-baseLineTime), reverse=True)]
